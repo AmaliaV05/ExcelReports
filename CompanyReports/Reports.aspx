@@ -28,6 +28,14 @@
             </div>
         </div>
     </div>
-
-    
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">Pareto principle Analysis</h3>
+        </div>
+        <div class="panel-body">            
+            <div>
+                <asp:Button ID="Button2" runat="server" Text="Products by Pareto Rule Report" OnClick="OnButtonClickedGetProductPareto" />
+            </div>
+        </div>
+    </div>    
 </asp:Content>
