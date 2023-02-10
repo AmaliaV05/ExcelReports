@@ -28,6 +28,8 @@ namespace CompanyReports
                 SetWorksheetHeaderRfmAnalysis(worksheet, todayDate, countryFilter);
                 SetWorksheetBodyRfmAnalysis(worksheet, countryFilter);
                 workbook.SaveAs("RFM Analysis - " + todayDate + ".xlsx", Response, ExcelDownloadType.Open, ExcelHttpContentType.Excel2016);
+                workbook.Close();
+                excelEngine.Dispose();
             }
         }
 
@@ -45,6 +47,8 @@ namespace CompanyReports
                 SetWorksheetHeaderProductPareto(worksheet, todayDate);
                 SetWorksheetBodyProductPareto(worksheet);
                 workbook.SaveAs("Products - " + todayDate + ".xlsx", Response, ExcelDownloadType.Open, ExcelHttpContentType.Excel2016);
+                workbook.Close();
+                excelEngine.Dispose();
             }
         }
 
