@@ -10,4 +10,5 @@ To run the application you need:
 
 ## Features
 The ExcelReports application can:
-- Create RFM analysis reports filtered by country
+- Create RFM analysis report filtered by country and export it in an excel document
+- Create report according to Pareto Principle and export it in an excel document
