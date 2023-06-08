@@ -2,6 +2,8 @@
 using System;
 using System.Data;
 using System.Data.SqlClient;
+using System.IO;
+using System.Reflection;
 using System.Web.UI;
 
 namespace CompanyReports
@@ -89,43 +91,32 @@ namespace CompanyReports
         private DataTable GetRFMAnalysisData(string country)
         {
             string constr = @"Data Source=.\SQLEXPRESS;Initial Catalog='AdventureWorks2019';Integrated Security=True";
+            
             using (var connection = new SqlConnection(constr))
             {
-                var query = "with Dataset as (" +
-               "select CustomerID, SalesOrderID, OrderDate, TotalDue " +
-               "from Sales.SalesOrderHeader " +
-               "inner join Sales.SalesTerritory on SalesTerritory.TerritoryID = SalesOrderHeader.TerritoryID " +
-               "where SalesTerritory.Name = '" + country + "' and SalesOrderHeader.Status = 5" +
-               ")," +
-               "Order_Summary as (" +
-               "select CustomerID, SalesOrderID, OrderDate, sum(TotalDue) as Total_Sales " +
-               "from Dataset " +
-               "group by CustomerID, SalesOrderID, OrderDate" +
-               ") " +
-               "select t1.CustomerID, " +
-               "datediff(day, (select max(OrderDate) from Order_Summary where CustomerID = t1.CustomerID), (select max(OrderDate) from Order_Summary)) as Recency, " +
-               "count(t1.SalesOrderID) as Frequency, " +
-               "sum(t1.Total_Sales) as Monetary, " +
-               "ntile(10) over(order by datediff(day, (select max(OrderDate) from Order_Summary where CustomerID = t1.CustomerID), (select max(OrderDate) from Order_Summary)) desc) as R, " +
-               "ntile(10) over(order by count(t1.SalesOrderID) asc) as F, " +
-               "ntile(10) over(order by sum(t1.Total_Sales) asc) as M " +
-               "from Order_Summary t1 " +
-               "group by t1.CustomerID " +
-               "order by 1, 3 desc;";
-                using (var command = new SqlCommand(query))
+                Assembly assembly = Assembly.GetCallingAssembly();
+                const string RfmAnalysis_File_Path = "CompanyReports.Scripts.Queries.RfmAnalysis.sql";
+                Stream resourceStream = assembly.GetManifestResourceStream(RfmAnalysis_File_Path);
+                using (var reader = new StreamReader(resourceStream))
                 {
-                    using (var dataAdapter = new SqlDataAdapter())
+                    var sqlScript = reader.ReadToEnd();
+                    using (var command = new SqlCommand(sqlScript))
                     {
-                        command.Connection = connection;
-                        dataAdapter.SelectCommand = command;
-                        using (var dt = new DataTable())
+                        using (var dataAdapter = new SqlDataAdapter())
                         {
-                            dataAdapter.Fill(dt);
-                            return dt;
+                            command.Connection = connection;
+                            command.CommandType = CommandType.Text;
+                            command.Parameters.Add("@Country", SqlDbType.NChar).Value = country;
+                            dataAdapter.SelectCommand = command;
+                            using (var dt = new DataTable())
+                            {
+                                dataAdapter.Fill(dt);
+                                return dt;
+                            }
                         }
                     }
                 }
-            }
+            }                        
         }
 
         private void SetTableBordersProductPareto(IWorksheet worksheet)
