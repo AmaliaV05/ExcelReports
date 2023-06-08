@@ -142,31 +142,24 @@ namespace CompanyReports
             string constr = @"Data Source=.\SQLEXPRESS;Initial Catalog='AdventureWorks2019';Integrated Security=True";
             using (var connection = new SqlConnection(constr))
             {
-                var query = "with product_wise_sales as (" +
-                    "select Product.ProductNumber, sum(SalesOrderDetail.LineTotal) as product_sales " +
-                    "from Sales.SalesOrderDetail " +
-                    "inner join Production.Product on Product.ProductID = SalesOrderDetail.ProductID " +
-                    "inner join Sales.SalesOrderHeader on SalesOrderDetail.SalesOrderID = SalesOrderHeader.SalesOrderID " +
-                    "where SalesOrderHeader.Status = 5 " +
-                    "group by Product.ProductNumber " +
-                    ")," +
-                    "calc_sales as (" +
-                    "select product_wise_sales.ProductNumber, product_sales, " +
-                    "sum(product_sales) over(order by product_sales desc rows between unbounded preceding and 0 preceding) as running_sales, " +
-                    "0.8 * sum(product_sales) over() as total_sales " +
-                    "from product_wise_sales" +
-                    ") " +
-                    "select* from calc_sales where running_sales <= total_sales";
-                using (var command = new SqlCommand(query))
+                Assembly assembly = Assembly.GetCallingAssembly();
+                const string ParetoRuleAnalysis_File_Path = "CompanyReports.Scripts.Queries.ParetoRuleAnalysis.sql";
+                Stream resourceStream = assembly.GetManifestResourceStream(ParetoRuleAnalysis_File_Path);
+                using (var reader = new StreamReader(resourceStream))
                 {
-                    using (var dataAdapter = new SqlDataAdapter())
+                    var sqlScript = reader.ReadToEnd();
+                    using (var command = new SqlCommand(sqlScript))
                     {
-                        command.Connection = connection;
-                        dataAdapter.SelectCommand = command;
-                        using (var dt = new DataTable())
+                        using (var dataAdapter = new SqlDataAdapter())
                         {
-                            dataAdapter.Fill(dt);
-                            return dt;
+                            command.Connection = connection;
+                            command.CommandType = CommandType.Text;                            
+                            dataAdapter.SelectCommand = command;
+                            using (var dt = new DataTable())
+                            {
+                                dataAdapter.Fill(dt);
+                                return dt;
+                            }
                         }
                     }
                 }
